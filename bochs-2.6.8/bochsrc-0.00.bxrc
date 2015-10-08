@@ -9,8 +9,6 @@ romimage: file=$BXSHARE/BIOS-bochs-latest
 #romimage: file=$BXSHARE/BIOS-bochs-2-processors, address=0xf0000
 
 #CPU
-cpu: count=1, ips=50000000, model=amd_k6_2_chomper, reset_on_triple_fault=1, cpuid_limit_winnt=0, ignore_bad_msrs=1, mwait_is_nop=1
-cpuid:x86_64=0,VMX=0,MMX=0,level=5
 #=======================================================================
 # MEGS
 # set this to the default number of Megabytes of memory you want
