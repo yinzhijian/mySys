@@ -14,13 +14,12 @@ TSS1_SEL = 40
 LDT0_SEL = 48
 LDT1_SEL = 56
 startup_32:
-#cli #close 中断
+cli #close 中断
 #reset the ds
 movw $16,%ax
 movw %ax,%ds
 #reload the gdt &idt
 lgdt gdt_48
-lidt idt_48
 #set the ss and the esp
 movw $KRN_DATA_SEL,%ax
 movw %ax,%ss
@@ -39,11 +38,16 @@ movl $6,%ebx
 movw $0,idt(%eax,%ebx,1)
 addl $8,%eax
 loop idt_loop
+#set 0x8 timer interrupt handle
+movl $0x40,%eax
+movw $timer_interrupt_handle,idt(%eax)
+
 #set 0x80 interrupt handle
 movl $0x400,%eax
 movw $x80_interrupt_handle,idt(%eax)
 movl $0x404,%eax
 movw $0xef00,idt(%eax)#DPL = 3
+lidt idt_48
 call function_settimer0
 #clear eflags TF flag
 pushfl
@@ -54,7 +58,7 @@ movl $TSS0_SEL,%eax
 ltr %ax
 movl $LDT0_SEL,%eax
 lldt %ax
-#sti #start 中断
+sti #start 中断
 #preper the interept stack to back task0
 pushl $TASK0_DATA_SEL#ss
 pushl $stack0_end-task0#esp
@@ -77,10 +81,6 @@ movb %ah,%al
 outb %al,%dx#write high 40h为8253的counter0的RW端口
 ret
 #timer0 end
-msg:
-.ascii "head is loaded"
-.byte 13,10
-msgend:
 x80_interrupt_handle:
 movw $KRN_DATA_SEL,%bx
 movw %bx,%ds
@@ -92,13 +92,32 @@ iret
 normal_interrupt_handle:
 movw $KRN_DATA_SEL,%bx
 movw %bx,%ds
+movb $0x20,%al
+outb %al,$0x20
 pushl $67 # char C
 call function_display
 addl $4,%esp
 iret
-
+timer_interrupt_handle:
+movw $KRN_DATA_SEL,%bx
+movw %bx,%ds
+movb $0x20,%al
+outb %al,$0x20
+movb $0,%al
+cmpb %al,current
+jz exec_task1
+movb $0,current
+jmpl $TSS0_SEL,$0
+jmp t_end
+exec_task1:
+movb $1,current
+jmpl $TSS1_SEL,$0
+t_end:
+iret
 display_index:
 .word 0
+current:
+.byte 0
 function_display:
 pushl %ebp
 movl %esp,%ebp
@@ -122,7 +141,7 @@ ret
 task0:
 movl $65,%eax #char A
 int $0x80
-movl $0xffffff,%ecx
+movl $0xfff,%ecx
 idle0:
 loop idle0
 jmp task0
@@ -136,7 +155,7 @@ task0_end:
 task1:
 movl $66,%eax #char B
 int $0x80
-movl $0xffffff,%ecx
+movl $0xfff,%ecx
 idle1:
 loop idle1
 jmp task1
@@ -171,7 +190,7 @@ tss1:
 .long 0 #pre tss link
 .long krn_stk1_end,KRN_DATA_SEL,0,0,0,0 #esp0,ss0,esp1,ss1,esp2,ss2
 .long 0 #cr3
-.long 0,0,0,0,0,0,stack1_end-task1,0,0,0 #eip,eflags,eax,ecx,edx,ebx,esp,ebp,esi,edi
+.long 0,0x200,0,0,0,0,stack1_end-task1,0,0,0 #eip,eflags,eax,ecx,edx,ebx,esp,ebp,esi,edi
 .long 0x17,0xf,0x17,0x17,0x17,0x17 #es,cs,ss,ds,fs,gs
 .long LDT1_SEL#ldt
 .long 0x80000000 #bitmap
