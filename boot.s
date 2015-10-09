@@ -4,7 +4,7 @@
 BOOTSEG = 0x07c0
 COPYSEG = 0x1000
 INITSEG = 0x0000
-SETUPLEN = 0x9 #8KB=16*512bytes
+SETUPLEN = 0xa #8KB=16*512bytes
 _start:
 jmpl $BOOTSEG,$go
 go:
