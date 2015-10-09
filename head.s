@@ -92,8 +92,8 @@ iret
 normal_interrupt_handle:
 movw $KRN_DATA_SEL,%bx
 movw %bx,%ds
-movb $0x20,%al
-outb %al,$0x20
+#movb $0x20,%al
+#outb %al,$0x20
 pushl $67 # char C
 call function_display
 addl $4,%esp
@@ -129,7 +129,7 @@ movw %ax,%es
 movb %dl,%es:0(%bx)
 movb $0x0a,%es:1(%bx)
 addw $2,%bx
-cmp $80*25,%bx
+cmp $80*25*2,%bx
 jnz not_eq 
 xor %bx,%bx
 not_eq:
