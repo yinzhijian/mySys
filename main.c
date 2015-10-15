@@ -60,7 +60,23 @@ __asm__ __volatile__("movl %0,%%esp\n\t" \
 __asm__ __volatile__("movb %0,(%1)\n\t" \
 	::"r"(c),"r"((location)));})
 
-//void display(char c);
+#define inp(val,port)({\
+__asm__ __volatile__("inb %0,%1\n\t" \
+	:"a"(val):"0"(val),"n"(port);val;})
+#define outp(val,port)({\
+__asm__ __volatile__("outb %1,%0\n\t" \
+	::"n"(val),"n"(port);})
+struct cmos_time_struct{
+u1 second;
+u1 minute;
+u1 hour;
+u1 day;
+u1 month;
+u1 year;
+}cmos_time_struct;
+void get_cmos_time(){
+	outp();	
+}
 void main(void) {
 	SET_DATA_SEL(KERNEL_DATA_SEL);
 	//SET_STACK(KERNEL_STACK);
